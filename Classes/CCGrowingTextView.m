@@ -162,12 +162,15 @@
 {
     CGFloat placeholderLabelXOrigin = CCGrowingTextView_isIOS7 ? 5 : 8;
     CGFloat placeholderLabelWidth = self.frame.size.width - placeholderLabelXOrigin * 2;
+    CGFloat placeholderLabelYOrigin = 0;
     if ([self respondsToSelector:@selector(textContainerInset)])
     {
+        placeholderLabelYOrigin = self.textContainerInset.top - 7.5;
         placeholderLabelXOrigin += self.textContainerInset.left;
         placeholderLabelWidth -= self.textContainerInset.left + self.textContainerInset.right;
     }
     CGRect placeholderLabelFrame = _placeholderLabel.frame;
+    placeholderLabelFrame.origin.y = placeholderLabelYOrigin;
     placeholderLabelFrame.origin.x = placeholderLabelXOrigin;
     placeholderLabelFrame.size.width = placeholderLabelWidth;
     _placeholderLabel.frame = placeholderLabelFrame;
