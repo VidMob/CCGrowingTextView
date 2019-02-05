@@ -46,14 +46,13 @@
     }];
     
     _placeholderLabel = [UILabel new];
-    [self CCGrowingTextView_updatePlaceholderLabelHeight];
-    [self CCGrowingTextView_updatePlaceholderLabelHorizontalSize];
-
-    _placeholderLabel.autoresizingMask = UIViewAutoresizingFlexibleWidth;
+    _placeholderLabel.numberOfLines = 0;
     _placeholderLabel.backgroundColor = [UIColor clearColor];
     _placeholderLabel.font = self.font;
     _placeholderLabel.textColor = [[self.class appearance] placeholderColor] ?: [UIColor lightGrayColor];
     [self addSubview:_placeholderLabel];
+
+    [self CCGrowingTextView_updatePlaceholderFrame];
     [self CCGrowingTextView_updatePlaceholder];
     
     [self addObserver:self forKeyPath:@"contentSize" options:NSKeyValueObservingOptionNew context:0];
@@ -112,7 +111,7 @@
     [super setFont:font];
     [self CCGrowingTextView_recalculateMaxHeight];
     _placeholderLabel.font = font;
-    [self CCGrowingTextView_updatePlaceholderLabelHeight];
+    [self CCGrowingTextView_updatePlaceholderFrame];
 }
 
 - (void)setContentOffset:(CGPoint)contentOffset
@@ -135,7 +134,7 @@
     if (UIEdgeInsetsEqualToEdgeInsets(self.textContainerInset, textContainerInset))
         return;
     [super setTextContainerInset:textContainerInset];
-    [self CCGrowingTextView_updatePlaceholderLabelHorizontalSize];
+    [self CCGrowingTextView_updatePlaceholderFrame];
 }
 
 - (void)setBounds:(CGRect)bounds
@@ -144,36 +143,29 @@
     [super setBounds:bounds];
     if (!widthChanged)
         return;
-    [self CCGrowingTextView_updatePlaceholderLabelHorizontalSize];
+    [self CCGrowingTextView_updatePlaceholderFrame];
     [self CCGrowingTextView_recalculateMaxHeight];
 }
 
-- (void)CCGrowingTextView_updatePlaceholderLabelHeight
+- (void)CCGrowingTextView_updatePlaceholderFrame
 {
-    NSString *originalText = self.text;
-    self.text = @"1";
-    CGRect placeholderLabelFrame = _placeholderLabel.frame;
-    placeholderLabelFrame.size.height = [self sizeThatFits:CGSizeMake(self.frame.size.width, MAXFLOAT)].height;
-    _placeholderLabel.frame = placeholderLabelFrame;
-    self.text = originalText;
-}
+    CGFloat xOrigin = CCGrowingTextView_isIOS7 ? 5 : 8;
+    CGFloat yOrigin = 0;
+    CGFloat width = self.frame.size.width - xOrigin * 2;
+    CGFloat maxHeight = self.frame.size.height;
 
-- (void)CCGrowingTextView_updatePlaceholderLabelHorizontalSize
-{
-    CGFloat placeholderLabelXOrigin = CCGrowingTextView_isIOS7 ? 5 : 8;
-    CGFloat placeholderLabelWidth = self.frame.size.width - placeholderLabelXOrigin * 2;
-    CGFloat placeholderLabelYOrigin = 0;
     if ([self respondsToSelector:@selector(textContainerInset)])
     {
-        placeholderLabelYOrigin = self.textContainerInset.top - 7.5;
-        placeholderLabelXOrigin += self.textContainerInset.left;
-        placeholderLabelWidth -= self.textContainerInset.left + self.textContainerInset.right;
+        xOrigin += self.textContainerInset.left;
+        yOrigin += self.textContainerInset.top;
+        width -= self.textContainerInset.left + self.textContainerInset.right;
+        maxHeight -= self.textContainerInset.top + self.textContainerInset.bottom;
     }
-    CGRect placeholderLabelFrame = _placeholderLabel.frame;
-    placeholderLabelFrame.origin.y = placeholderLabelYOrigin;
-    placeholderLabelFrame.origin.x = placeholderLabelXOrigin;
-    placeholderLabelFrame.size.width = placeholderLabelWidth;
-    _placeholderLabel.frame = placeholderLabelFrame;
+
+    CGFloat height = [_placeholderLabel sizeThatFits:CGSizeMake(width, MAXFLOAT)].height;
+    height = MIN(height, maxHeight);
+
+    _placeholderLabel.frame = CGRectMake(xOrigin, yOrigin, width, height);
 }
 
 - (void)CCGrowingTextView_updatePlaceholder
@@ -194,6 +186,7 @@
 - (void)setPlaceholder:(NSString *)placeholder
 {
     _placeholderLabel.text = placeholder;
+    [self CCGrowingTextView_updatePlaceholderFrame];
 }
 
 - (NSString *)placeholder
